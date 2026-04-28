@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 import requests
 import datetime
 
+
 app = Flask(__name__)
 
 # 自選股
