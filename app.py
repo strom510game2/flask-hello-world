@@ -18,7 +18,7 @@ stocks = {
 
 def calc_levels(price):
     support = round(price * 0.97, 2)
-    resistance = round(price * 1.03, 2)
+    resistance = round(price * 1.03, 2) 
 
     if price > resistance:
         suggestion = "突破壓力，偏多"
