@@ -1,10 +1,5 @@
-
 from flask import Flask, jsonify
 import requests
-import datetime
-
-from flask import Flask, jsonify
-import random
 import datetime
 
 app = Flask(__name__)
@@ -16,9 +11,10 @@ stocks = {
     "3481": "群創"
 }
 
+# 計算支撐壓力
 def calc_levels(price):
     support = round(price * 0.97, 2)
-    resistance = round(price * 1.03, 2) 
+    resistance = round(price * 1.03, 2)
 
     if price > resistance:
         suggestion = "突破壓力，偏多"
@@ -29,24 +25,48 @@ def calc_levels(price):
 
     return support, resistance, suggestion
 
+
+# 取得即時股價（台股）
+def get_stock_price(stock_no):
+    try:
+        url = f"https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_{stock_no}.tw"
+
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
+
+        response = requests.get(url, headers=headers, timeout=10)
+        data = response.json()
+
+        if data["msgArray"]:
+            price = data["msgArray"][0]["z"]
+
+            if price != "-":
+                return float(price)
+
+        return None
+
+    except Exception as e:
+        print("Error:", e)
+        return None
+
+
 @app.route("/")
 def home():
+
     data = []
 
-    for code, name in stocks.items():
-        for stock_no, name in stocks.items():
+    for stock_no, name in stocks.items():
 
-    price = get_stock_price(stock_no)
+        price = get_stock_price(stock_no)
 
-    if price is None:
-        continue
-
-    support, resistance, suggestion = calc_levels(price)
+        if price is None:
+            continue
 
         support, resistance, suggestion = calc_levels(price)
 
         data.append({
-            "stock": code,
+            "stock": stock_no,
             "name": name,
             "price": price,
             "support": support,
@@ -56,25 +76,3 @@ def home():
         })
 
     return jsonify(data)
-
-app = Flask(__name__)
-
-def get_stock_price(stock_no):
-    try:
-        url = f"https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_{stock_no}.tw"
-        headers = {
-            "User-Agent": "Mozilla/5.0"
-        }
-
-        response = requests.get(url, headers=headers, timeout=10)
-        data = response.json()
-
-        if data["msgArray"]:
-            price = float(data["msgArray"][0]["z"])
-            return price
-
-        return None
-
-    except Exception as e:
-        print("Error:", e)
-        return None
