@@ -34,7 +34,15 @@ def home():
     data = []
 
     for code, name in stocks.items():
-        price = round(random.uniform(10, 1000), 2)
+        for stock_no, name in stocks.items():
+
+    price = get_stock_price(stock_no)
+
+    if price is None:
+        continue
+
+    support, resistance, suggestion = calc_levels(price)
+
         support, resistance, suggestion = calc_levels(price)
 
         data.append({
