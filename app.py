@@ -12,19 +12,32 @@ stock_name = "台積電"
 # 取得股價（最新收盤價）
 def get_stock_price():
     try:
-        url = f"https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&stockNo={stock_no}"
+        today = datetime.datetime.now()
+
+        date_str = today.strftime("%Y%m01")
+
+        url = (
+            "https://www.twse.com.tw/exchangeReport/STOCK_DAY"
+            f"?response=json&date={date_str}&stockNo={stock_no}"
+        )
 
         response = requests.get(url, timeout=10)
+
         data = response.json()
+
+        if "data" not in data:
+            print("No data field")
+            return None
+
+        if len(data["data"]) == 0:
+            print("Empty data")
+            return None
 
         closes = []
 
         for row in data["data"]:
             close_price = row[6].replace(",", "")
             closes.append(float(close_price))
-
-        if len(closes) == 0:
-            return None
 
         return closes[-1]
 
@@ -33,13 +46,36 @@ def get_stock_price():
         return None
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 # 計算真支撐 / 壓力
-def get_support_resistance():
+ def get_support_resistance():
     try:
-        url = f"https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&stockNo={stock_no}"
+        today = datetime.datetime.now()
+
+        date_str = today.strftime("%Y%m01")
+
+        url = (
+            "https://www.twse.com.tw/exchangeReport/STOCK_DAY"
+            f"?response=json&date={date_str}&stockNo={stock_no}"
+        )
 
         response = requests.get(url, timeout=10)
+
         data = response.json()
+
+        if "data" not in data:
+            return None, None
 
         closes = []
 
