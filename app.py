@@ -30,26 +30,27 @@ def calc_levels(price):
 # 取得即時股價（台股）
 def get_stock_price(stock_no):
     try:
-        url = f"https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_{stock_no}.tw"
+        url = f"https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&stockNo={stock_no}"
 
-        headers = {
-            "User-Agent": "Mozilla/5.0"
-        }
-
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, timeout=10)
         data = response.json()
 
-        if data["msgArray"]:
-            price = data["msgArray"][0]["z"]
+        closes = []
 
-            if price != "-":
-                return float(price)
+        for row in data["data"]:
+            close_price = row[6].replace(",", "")
+            closes.append(float(close_price))
 
-        return None
+        if len(closes) == 0:
+            return None
+
+        # 最新收盤價
+        return closes[-1]
 
     except Exception as e:
-        print("Error:", e)
+        print("Price Error:", e)
         return None
+
 
 
 @app.route("/")
@@ -100,6 +101,32 @@ def get_support_resistance(stock_no):
             closes.append(float(close_price))
 
         # 只取最近 60 天
+        closes = closes[-60:]
+
+        if len(closes) < 20:
+            return None, None
+
+        support = round(min(closes[-20:]), 2)
+        resistance = round(max(closes), 2)
+
+        return support, resistance
+
+    except Exception as e:
+        print("SR Error:", e)
+        return None, None
+def get_support_resistance(stock_no):
+    try:
+        url = f"https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&stockNo={stock_no}"
+
+        response = requests.get(url, timeout=10)
+        data = response.json()
+
+        closes = []
+
+        for row in data["data"]:
+            close_price = row[6].replace(",", "")
+            closes.append(float(close_price))
+
         closes = closes[-60:]
 
         if len(closes) < 20:
