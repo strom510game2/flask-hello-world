@@ -4,38 +4,27 @@ import datetime
 
 app = Flask(__name__)
 
-# 固定股票：台積電
-stock_no = "2330"
+# 台積電
+stock_symbol = "2330.TW"
 stock_name = "台積電"
 
 
-# 取得股價
+# 取得最新股價（Yahoo）
 def get_stock_price():
     try:
-        today = datetime.datetime.now()
-        date_str = today.strftime("%Y%m01")
-
         url = (
-            "https://www.twse.com.tw/exchangeReport/STOCK_DAY"
-            f"?response=json&date={date_str}&stockNo={stock_no}"
+            "https://query1.finance.yahoo.com/v8/finance/chart/"
+            + stock_symbol
         )
 
         response = requests.get(url, timeout=10)
         data = response.json()
 
-        if "data" not in data:
-            return None
+        result = data["chart"]["result"][0]
 
-        closes = []
+        price = result["meta"]["regularMarketPrice"]
 
-        for row in data["data"]:
-            price = row[6].replace(",", "")
-            closes.append(float(price))
-
-        if len(closes) == 0:
-            return None
-
-        return closes[-1]
+        return float(price)
 
     except Exception as e:
         print("Price Error:", e)
@@ -45,30 +34,25 @@ def get_stock_price():
 # 計算支撐 / 壓力
 def get_support_resistance():
     try:
-        today = datetime.datetime.now()
-        date_str = today.strftime("%Y%m01")
-
         url = (
-            "https://www.twse.com.tw/exchangeReport/STOCK_DAY"
-            f"?response=json&date={date_str}&stockNo={stock_no}"
+            "https://query1.finance.yahoo.com/v8/finance/chart/"
+            + stock_symbol
+            + "?range=3mo&interval=1d"
         )
 
         response = requests.get(url, timeout=10)
         data = response.json()
 
-        if "data" not in data:
-            return None, None
+        result = data["chart"]["result"][0]
 
-        closes = []
+        closes = result["indicators"]["quote"][0]["close"]
 
-        for row in data["data"]:
-            price = row[6].replace(",", "")
-            closes.append(float(price))
-
-        closes = closes[-60:]
+        closes = [c for c in closes if c is not None]
 
         if len(closes) < 20:
             return None, None
+
+        closes = closes[-60:]
 
         support = round(min(closes[-20:]), 2)
         resistance = round(max(closes), 2)
@@ -102,7 +86,7 @@ def home():
         suggestion = "區間內"
 
     data = {
-        "stock": stock_no,
+        "stock": "2330",
         "name": stock_name,
         "price": price,
         "support": support,
