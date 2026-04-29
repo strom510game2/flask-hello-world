@@ -64,7 +64,16 @@ def home():
         if price is None:
             continue
 
-        support, resistance, suggestion = calc_levels(price)
+        support, resistance = get_support_resistance(stock_no)
+
+if support is None:
+    suggestion = "資料不足"
+elif price > resistance:
+    suggestion = "突破壓力"
+elif price < support:
+    suggestion = "跌破支撐"
+else:
+    suggestion = "區間內"
 
         data.append({
             "stock": stock_no,
@@ -77,3 +86,30 @@ def home():
         })
 
     return jsonify(data)
+def get_support_resistance(stock_no):
+    try:
+        url = f"https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&stockNo={stock_no}"
+
+        response = requests.get(url, timeout=10)
+        data = response.json()
+
+        closes = []
+
+        for row in data["data"]:
+            close_price = row[6].replace(",", "")
+            closes.append(float(close_price))
+
+        # 只取最近 60 天
+        closes = closes[-60:]
+
+        if len(closes) < 20:
+            return None, None
+
+        support = round(min(closes[-20:]), 2)
+        resistance = round(max(closes), 2)
+
+        return support, resistance
+
+    except Exception as e:
+        print("SR Error:", e)
+        return None, None
